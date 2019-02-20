@@ -1,0 +1,46 @@
+global allCells = [];
+global firstCell;
+global allCellsArea = [];
+global firstCellArea;
+
+
+function cellsAcc(from, with){
+	allCells = [];
+	firstCell = from;
+	browseCells(from, with, firstCell);
+	return allCells;
+}
+
+
+function browseCells(cc, cmp, first){
+	if(cc != null){
+		if(getCellContent(cc) === CELL_EMPTY or cc === first){
+			if(getPathLength(cc, first) < cmp && allCells[cc] === null){
+				allCells[cc] = cc;
+				browseCells(getCellFromXY(getCellX(cc), getCellY(cc) + 1), cmp, first);
+				browseCells(getCellFromXY(getCellX(cc), getCellY(cc) - 1), cmp, first);
+				browseCells(getCellFromXY(getCellX(cc) + 1, getCellY(cc)), cmp, first);
+				browseCells(getCellFromXY(getCellX(cc) - 1, getCellY(cc)), cmp, first);
+			}	
+		}
+	}
+}
+
+function cellsArea(from, with){
+	allCellsArea = [];
+	firstCellArea = from;
+	browseCellsArea(from, with, firstCellArea);
+	return allCellsArea;
+}
+
+function browseCellsArea(cc, cmp, first){
+	if(cc != null){
+		if(getCellDistance(cc, first) <= cmp && allCellsArea[cc] === null){
+			allCellsArea[cc] = cc;
+			browseCellsArea(getCellFromXY(getCellX(cc), getCellY(cc) + 1), cmp, first);
+			browseCellsArea(getCellFromXY(getCellX(cc), getCellY(cc) - 1), cmp, first);
+			browseCellsArea(getCellFromXY(getCellX(cc) + 1, getCellY(cc)), cmp, first);
+			browseCellsArea(getCellFromXY(getCellX(cc) - 1, getCellY(cc)), cmp, first);
+		}
+	}
+}

@@ -1,0 +1,658 @@
+include("UtilsMap");
+include("BulbeHealer");
+include("BulbeIce");
+include("BulbeMetal");
+include("BulbePunny");
+include("BulbeRocky");
+
+
+global enemy;
+global enemyRange;
+global enemyPA;
+global finalDest;
+global finalTarget;
+global finalHidingDest;
+global isBulkySubstain;
+global enemyType;
+
+
+function main(){
+	if(getTurn() === 1){
+		firstTurn();
+		return 0;
+	}
+	update();
+}
+
+function firstTurn() {
+	enemy = getNextPlayer();
+	enemyRange = 9 + getMP(enemy);
+	enemyPA = getTP(enemy);
+	getInfoEnemy();
+	isBulkySubstain = getInfoBulkySubstain();
+	setWeapon(WEAPON_GAZOR);
+	moveToward(enemy, 1);
+	invocFirstTurn();
+}
+
+function update(){
+	if(canKill() === true && getTP() >= 18){
+		moveTowardCell(finalDest);
+		useWeapon(enemy);
+		useWeapon(enemy);
+		useChip(CHIP_TOXIN, enemy);
+		useChip(CHIP_VENOM, enemy);
+		debug("kill");
+	}
+	else if(canParalize() === true && enemyPA < 19){
+		moveTowardCell(finalDest);
+		useChipOnCell(CHIP_SOPORIFIC, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		if(getCellDistance(getCell(), getCell(enemy)) < 3){
+			moveAwayFrom(enemy, 1);
+		}
+		debug("1");
+	} else if(isBlocked() === true && canTP() === true){
+		useChipOnCell(CHIP_TELEPORTATION, finalDest);
+		useChipOnCell(CHIP_TOXIN, getCell(enemy));
+		if(isBulkySubstain === true){
+			useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+		}
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		hide();
+		moveTowardCell(finalHidingDest);
+		debug("5.5");
+	} else if (canAttackSafely() === true){
+		moveTowardCell(finalDest);
+		useWeaponOnCell(finalTarget);
+		useWeaponOnCell(finalTarget);
+		if(isBulkySubstain === true){
+			useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+		}
+		useChipOnCell(CHIP_VENOM, getCell(enemy));
+		if(needAntidote() === true){
+			useChip(CHIP_ANTIDOTE, getLeek());
+		}
+		useChipOnCell(CHIP_TOXIN, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		moveTowardCell(finalHidingDest);
+		debug("2");		
+		
+	} else if (canAttack() === true) {	
+		moveTowardCell(finalDest);
+		useWeaponOnCell(finalTarget);
+		useWeaponOnCell(finalTarget);
+		if(needAntidote() === true){
+			useChip(CHIP_ANTIDOTE, getLeek());
+		}
+		if(isBulkySubstain === true){
+			if(getPathLength(getCell(), getCellToUseChip(CHIP_FRACTURE, enemy)) <= getMP()){
+					moveTowardCell(getCellToUseChip(CHIP_FRACTURE, enemy));
+				}
+				useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+		}
+		if(getPathLength(getCell(), getCellToUseChip(CHIP_TOXIN, enemy)) <= getMP() && getCooldown(CHIP_TOXIN) === 0 && getCooldown(CHIP_ANTIDOTE, enemy) != 0){
+			moveTowardCell(getCellToUseChip(CHIP_TOXIN, enemy));
+		}
+		useChipOnCell(CHIP_TOXIN, getCell(enemy));	
+		if(getPathLength(getCell(), getCellToUseChip(CHIP_TRANQUILIZER, enemy)) <= getMP() && getTP() >= 3){
+			moveTowardCell(getCellToUseChip(CHIP_TRANQUILIZER, enemy));
+		}
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		if(getPathLength(getCell(), getCellToUseChip(CHIP_VENOM, enemy)) <= getMP() && getTP() >= 4){
+			moveTowardCell(getCellToUseChip(CHIP_VENOM, enemy));
+		}
+		useChipOnCell(CHIP_VENOM, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		if(getCellToHitArea() === true && getTP() >= 5){
+			moveTowardCell(finalDest);
+			useChipOnCell(CHIP_SOPORIFIC, finalTarget);
+		}
+		hide();
+		moveTowardCell(finalHidingDest);
+		debug("4");
+	} else if(canAttackSpells() === true){
+		moveTowardCell(finalDest);
+		useChip(CHIP_SOPORIFIC, enemy);
+		useChip(CHIP_TOXIN, enemy);
+		useChip(CHIP_VENOM, enemy);
+		if(isBulkySubstain === true){
+			useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+		}
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		hide();
+		moveTowardCell(finalHidingDest);
+	} else if (canInvocSafely() === true){
+		invocGoodBuble();
+		moveTowardCell(finalHidingDest);
+		debug("3");
+	} else if(canAttackBulbes() === true){
+		moveTowardCell(getCellsToUseWeapon(finalTarget));
+		useWeapon(finalTarget);
+		useWeapon(finalTarget);
+		hide();
+		moveTowardCell(finalHidingDest);
+	} else if(canTP() === true) {
+		useChipOnCell(CHIP_TELEPORTATION, finalDest);
+		useChipOnCell(CHIP_TOXIN, getCell(enemy));
+		if(isBulkySubstain === true){
+			useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+		}
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+		hide();
+		moveTowardCell(finalHidingDest);
+		debug("5");
+	} else if (canInvocSafelyWeak() === true){
+		moveTowardCell(finalDest);
+		invocGoodBuble();
+		debug("7");
+	} else {
+		while (getCellDistance(getCell(), getCell(enemy)) > enemyRange + 2 && getMP() > 0){
+			moveToward(enemy, 1);
+		}
+		debug("6");
+	}
+	recyclePA();
+}
+
+function canParalize(){
+	var enemies = getAliveEnemies();
+	var allies = getAliveAllies();
+	var compteurHealer = 0;
+	var posToHit;
+	var ok = false;
+	var buffsMe = getEffects();
+	var totalPoison = 0;
+	for(var currBuff in buffsMe){
+		if(currBuff[0] == 13){
+			totalPoison = totalPoison + currBuff[1];
+		}
+	}
+	if(totalPoison + 50 > getLife()){
+		return false;
+	}
+	for(var currName in allies){
+		if(getName(currName) === "healer_bulb" or getName(currName) === "puny_bulb" or getName(currName) === "metallic_bulb"){
+			compteurHealer = compteurHealer + 1;
+		}
+	}
+	if((count(enemies) + 1 < (count(allies) - compteurHealer))){
+		posToHit = getCellsToUseChip(CHIP_SOPORIFIC, enemy);
+		for(var cc in posToHit){
+			if(getCellDistance(getCell(enemy), cc) > 2 && getPathLength(getCell(), cc) <= getMP()){
+				finalDest = cc;
+				ok = true;
+				break;
+			}
+		}
+	}
+	if(ok === true){
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function canAttackSafely(){
+	if(hide() === true){
+		var areaTarget = cellsArea(getCell(enemy), 3);
+		var cellTarget;
+		var mpUsed;
+		for (var cc in areaTarget){
+			if(cc != null){
+				if(getCellContent(cc) != CELL_OBSTACLE){
+					cellTarget = getCellsToUseWeaponOnCell(cc);
+					for(var cc2 in cellTarget){
+						mpUsed = getPathLength(getCell(), cc2);
+						if(getMP() - mpUsed + getDistance(cc2, getCell(enemy)) > enemyRange){
+							finalDest = cc2;
+							finalTarget = cc;
+							return true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+function canInvocSafely(){
+	if(hide() === true){
+		if(invocAvailable() === true){
+			return true;
+		}
+	}
+	return false;
+}
+
+function canInvocSafelyWeak(){
+	if(invocAvailableWeak() === true){
+		if(getDistance(getCell(), getCell(enemy)) > enemyRange){
+			finalDest = getCell();
+			return true;
+		}
+		var areaMP = cellsAcc(getCell(), getMP());
+		for (var cc in areaMP){
+			if(getDistance(cc, getCell(enemy)) > enemyRange){
+				finalDest = cc;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+function canAttack(){
+	var areaTarget = cellsArea(getCell(enemy), 3);
+	var currPossToHit;
+	var currValueMP;
+	var bestValueMP = getMP();
+	var bestDest;
+	var bestTarget;
+	var bestDmg = 5.0;
+	var currDmg;
+	for (var cc in areaTarget){
+		if(getCellContent(cc) != CELL_OBSTACLE){
+			currDmg = getCellDistance(getCell(enemy), cc);
+			currPossToHit = getCellsToUseWeaponOnCell(WEAPON_GAZOR, cc);
+			for(var cc2 in currPossToHit){
+				if(getCellDistance(cc2, cc) > 3){
+					currValueMP = getPathLength(cc2, getCell());
+					if(getPathLength(cc2, getCell()) <= getMP()){
+						if((currDmg < bestDmg) or (currValueMP < bestValueMP && bestDmg === currDmg)){
+							bestDmg = currDmg;
+							bestValueMP = currValueMP;
+							bestDest = cc2;
+							bestTarget = cc;
+						}	
+					}
+				}
+			}	
+		}
+	}
+	if(bestValueMP != getMP()){
+		finalDest = bestDest;
+		finalTarget = bestTarget;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function canAttackSpells(){
+	var cellsToHit = getCellsToUseChip(CHIP_SOPORIFIC, enemy);
+	var currValueMP;
+	var bestValueMP = getMP();
+	var bestDest;
+	for(var cc in cellsToHit){
+		if(getCellDistance(cc, getCell(enemy)) > 2){
+			currValueMP = getPathLength(cc, getCell());
+			if(getPathLength(cc, getCell()) <= getMP()){
+				if(currValueMP < bestValueMP){
+					bestValueMP = currValueMP;
+					bestDest = cc;
+				}
+			}
+		}
+	}
+	if(bestValueMP != getMP()){
+		finalDest = bestDest;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function canTP(){
+	if(getCooldown(CHIP_TELEPORTATION) === 0){
+		var areaTP = cellsAcc(getCell(),  12);
+		for(var cc in areaTP){
+			if(getCellDistance(cc, getCell(enemy)) === 6){
+				if(lineOfSight(cc, getCell(enemy))){
+					finalDest = cc;
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+function getInfoBulkySubstain(){
+	if(getStrength(enemy) >= 200){
+		return true;
+	}
+	if(getMagic(enemy) >= 200){
+		return true;
+	}
+	return false;
+}
+
+function getInfoEnemy(){
+	if(getStrength(enemy) >= 400){
+		enemyType = "FORCE";
+	}
+}
+
+function recyclePA(){
+	if(needAntidote() === true){
+		useChip(CHIP_ANTIDOTE, getLeek());
+	}
+	invocGoodBuble();
+	if(isBulkySubstain === true){
+		if(getPathLength(getCell(), getCellToUseChip(CHIP_FRACTURE, enemy)) <= getMP() && getTP() >= 3){
+			moveTowardCell(getCellToUseChip(CHIP_FRACTURE, enemy));
+		}
+		useChipOnCell(CHIP_FRACTURE, getCell(enemy));
+	}
+	if(getPathLength(getCell(), getCellToUseChip(CHIP_VENOM, enemy)) <= getMP() && getTP() >= 4){
+		moveTowardCell(getCellToUseChip(CHIP_TOXIN, enemy));
+	}
+	useChipOnCell(CHIP_VENOM, getCell(enemy));
+	if(getPathLength(getCell(), getCellToUseChip(CHIP_TRANQUILIZER, enemy)) <= getMP() && getTP() >= 3){
+			moveTowardCell(getCellToUseChip(CHIP_TRANQUILIZER, enemy));
+	}
+	useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+	useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+	useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+	useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+	useChipOnCell(CHIP_TRANQUILIZER, getCell(enemy));
+}
+
+function isBlocked(){
+	var areaBlock = cellsArea(getCell(), 1);
+	for(var cc in areaBlock){
+		if(getCellContent(cc)== CELL_EMPTY){
+			return false;
+		}
+	}
+	return true;
+}
+
+function hide(){
+	var areaRange = cellsAcc(getCell(),  getMP());
+	var bestDest = -500;
+	var currDest;
+	var bestBestFromZero = 500;
+	var currBestFromZero;
+	var bestHidingSpot;
+	for(var cc in areaRange){
+		currBestFromZero = getCellDistance(cc, getCellFromXY(0, 0));
+		currDest = getCellDistance(cc, getCell(enemy));
+		if(getCellDistance(cc, getCell(enemy)) > enemyRange && currBestFromZero < bestBestFromZero){
+			bestBestFromZero = currBestFromZero;
+			bestHidingSpot = cc;
+		} else if(currDest > bestDest or (currBestFromZero < bestBestFromZero && currDest === bestDest)){
+			bestBestFromZero = currBestFromZero;
+			bestDest = currDest;
+			bestHidingSpot = cc;
+		}
+	}
+	finalHidingDest = bestHidingSpot;
+	if(bestHidingSpot === null){
+		return false;
+	}
+	if(getCellDistance(bestHidingSpot, getCell(enemy)) > enemyRange){
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function canKill(){
+	var buffsEnemy = getEffects(enemy);
+	var totalPoison = 0;
+	for(var currBuff in buffsEnemy){
+		if(currBuff[0] == 13){
+			totalPoison = totalPoison + currBuff[1];
+		}
+		if(currBuff[0] == 2){
+			totalPoison = totalPoison - currBuff[1];
+		}
+	}
+	if((getLife(enemy) - totalPoison) <= 500){
+		var areaHit = getCellsToUseWeapon(enemy);
+		for(var cc in areaHit){
+			if(getPathLength(getCell(), cc) <= getMP()){
+				finalDest = cc;
+			return true;
+			}
+		}
+	}
+}
+
+function needAntidote(){
+	if(getCooldown(CHIP_ANTIDOTE) === 0){
+		var buffsMe = getEffects();
+		var totalPoison = 0;
+		for(var currBuff in buffsMe){
+			if(currBuff[0] == 13){
+				totalPoison = totalPoison + currBuff[1];
+			}
+		}
+		if(totalPoison > 200){
+			return true;
+		}
+	}
+	return false;
+}
+
+function getCellToHitArea(){
+	var areaEffect = cellsArea(getCell(enemy), 2);
+	var currPossToHit;
+	var currValueMP;
+	var bestValueMP = getMP();
+	var bestDest;
+	var bestTarget;
+	var bestDmg = 5.0;
+	var currDmg;
+	for(var cc in areaEffect){
+		if(getCellContent(cc) != CELL_OBSTACLE){
+			currDmg = getCellDistance(getCell(enemy), cc);
+			currPossToHit = getCellsToUseChipOnCell(CHIP_SOPORIFIC, cc);
+			for(var cc2 in currPossToHit){
+				if(getCellDistance(cc2, cc) > 2){
+					currValueMP = getPathLength(cc2, getCell());
+					if(getPathLength(cc2, getCell()) <= getMP()){
+						if((currDmg < bestDmg) or (currValueMP < bestValueMP && bestDmg === currDmg)){
+							bestDmg = currDmg;
+							bestValueMP = currValueMP;
+							bestDest = cc2;
+							bestTarget = cc;
+						}	
+					}
+				}
+			}
+		}
+	}
+	if(bestValueMP != getMP()){
+		finalDest = bestDest;
+		finalTarget = bestTarget;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+function canAttackBulbes(){
+	var enemies = getAliveEnemies();
+	var areaTarget;
+	var cellTarget;
+	var mpUsed;
+	var compteur;
+	var bestValue = 0;
+	var bestTarget = 0;
+	for(var currEnemy in enemies){
+		if(getPathLength(getCellToUseWeapon(currEnemy), getCell()) <= getMP()){
+			areaTarget = cellsArea(getCell(enemy), 3);
+			compteur = 0;
+			for(var cc in areaTarget){
+				if(getCellContent(cc) === CELL_PLAYER){
+					if(isAlly(getLeekOnCell(cc)) === true){
+						compteur = compteur - 1;
+					} else {
+						compteur = compteur + 1;
+					}
+				}
+			}
+			if(compteur > bestValue){
+				bestValue = compteur;
+				bestTarget = currEnemy;
+			}
+		}	
+	}
+	if(bestTarget != 0){
+		finalTarget = bestTarget;
+		return true;
+	} else {
+		return false;
+	}
+}
+
+////////INVOC////////INVOC////////INVOC////////INVOC////////INVOC////////
+function invocAvailable() {
+	if (getCooldown(CHIP_HEALER_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_ICED_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_ROCKY_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_METALLIC_BULB)  === 0){
+		return true;
+	}
+	return false;
+}
+
+function invocAvailableWeak() {
+	if (getCooldown(CHIP_HEALER_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_ICED_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_METALLIC_BULB)  === 0){
+		return true;
+	}
+	if (getCooldown(CHIP_PUNY_BULB) === 0) {
+		return true;
+	}
+	if (getCooldown(CHIP_ROCKY_BULB) === 0) {
+		return true;
+	}
+	return false;
+}
+
+function invocGoodBuble(){
+	var bestPosToInvoc;
+	if(enemyType === "FORCE"){
+		if (getCooldown(CHIP_METALLIC_BULB) == 0) {
+			var nbMetal1 = getNbMetal();
+			bestPosToInvoc = getBestPosToInvoc(CHIP_METALLIC_BULB);
+			summon(CHIP_METALLIC_BULB, bestPosToInvoc, mainMetal);
+			if(nbMetal1 >= 1){
+				sendTo(getLeekOnCell(bestPosToInvoc), MESSAGE_ATTACK, true);
+			}
+		}
+	}
+	if(getLife() / getTotalLife() < 1){
+		if (getCooldown(CHIP_HEALER_BULB) == 0) {
+			bestPosToInvoc = getBestPosToInvoc(CHIP_HEALER_BULB);
+			summon(CHIP_HEALER_BULB, bestPosToInvoc, mainHealer);
+			summon(CHIP_HEALER_BULB, getCellToUseChip(CHIP_HEALER_BULB, getLeek()), mainHealer);
+		}
+	}
+	if (getCooldown(CHIP_ICED_BULB) == 0) {
+		bestPosToInvoc = getBestPosToInvoc(CHIP_ICED_BULB);
+		summon(CHIP_ICED_BULB, bestPosToInvoc, mainIce);
+		summon(CHIP_ICED_BULB, getCellToUseChip(CHIP_ICED_BULB, getLeek()), mainIce);
+	}
+	if (getCooldown(CHIP_ROCKY_BULB) == 0) {
+		bestPosToInvoc = getBestPosToInvoc(CHIP_ROCKY_BULB);
+		summon(CHIP_ROCKY_BULB, bestPosToInvoc, mainRock);
+		summon(CHIP_ROCKY_BULB, getCellToUseChip(CHIP_ROCKY_BULB, getLeek()), mainRock);
+	}
+	if (getCooldown(CHIP_HEALER_BULB) == 0) {
+		bestPosToInvoc = getBestPosToInvoc(CHIP_HEALER_BULB);
+		summon(CHIP_HEALER_BULB, bestPosToInvoc, mainHealer);
+		summon(CHIP_HEALER_BULB, getCellToUseChip(CHIP_HEALER_BULB, getLeek()), mainHealer);
+	}
+	if (getCooldown(CHIP_METALLIC_BULB) == 0) {
+		var nbMetal1 = getNbMetal();
+		bestPosToInvoc = getBestPosToInvoc(CHIP_METALLIC_BULB);
+		summon(CHIP_METALLIC_BULB, bestPosToInvoc, mainMetal);
+		if(nbMetal1 >= 1){
+			sendTo(getLeekOnCell(bestPosToInvoc), MESSAGE_ATTACK, true);
+		}
+	}
+	if (getCooldown(CHIP_PUNY_BULB) == 0) {
+		bestPosToInvoc = getBestPosToInvoc(CHIP_PUNY_BULB);
+		summon(CHIP_PUNY_BULB, bestPosToInvoc, mainPunny);
+		summon(CHIP_PUNY_BULB, getCellToUseChip(CHIP_PUNY_BULB, getLeek()), mainPunny);
+	}
+	sendAll(MESSAGE_ATTACK, enemy);
+}
+
+function getBestPosToInvoc(chipT){
+	var areaInvoc = getCellsToUseChip(chipT, getLeek());
+	var bestDist = 500.0;
+	var currBestDist;
+	var bestDest;
+	for (var cc in areaInvoc){
+		currBestDist = getCellDistance(getCell(enemy), cc);
+		if(currBestDist < bestDist){
+			bestDist = currBestDist;
+			bestDest = cc;
+		}
+	}
+	return bestDest;
+}
+
+function invocFirstTurn(){
+	var bestPosToInvoc;
+	if(enemyType === "FORCE"){
+		bestPosToInvoc = getBestPosToInvoc(CHIP_METALLIC_BULB);
+		summon(CHIP_METALLIC_BULB, bestPosToInvoc, mainMetal);
+	}
+	bestPosToInvoc = getBestPosToInvoc(CHIP_ROCKY_BULB);
+	if(summon(CHIP_ROCKY_BULB, bestPosToInvoc, mainRock) != USE_SUCCESS){
+		summon(CHIP_ROCKY_BULB, getCellToUseChip(CHIP_ROCKY_BULB, getLeek()), mainRock);
+	}
+	bestPosToInvoc = getBestPosToInvoc(CHIP_PUNY_BULB);
+	if(summon(CHIP_PUNY_BULB, bestPosToInvoc, mainPunny) != USE_SUCCESS){
+		summon(CHIP_PUNY_BULB, getCellToUseChip(CHIP_PUNY_BULB, getLeek()), mainPunny);
+	}
+}
+
+function getNbMetal(){
+	var allies = getAliveAllies();
+	var compteur = 0;
+	for(var currAlly in allies){
+		if(getName(currAlly) === "metallic_bulb"){
+			compteur++;
+		}
+	}
+	return compteur;
+}
+////////////////////////////////////////////////////////////////////////
+
+main();
+
+

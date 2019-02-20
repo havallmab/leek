@@ -1,0 +1,86 @@
+include("UtilsMap");
+
+global finalDestIce;
+global finalTargetIce;
+global enemyIce;
+
+function mainIce(){
+	enemyIce = getNearestEnemy();
+	
+	if(iceberg() === true){
+		moveTowardCell(finalDestIce);
+		useChipOnCell(CHIP_ICEBERG, finalTargetIce);
+	} else if (stalactite() === true){
+		moveTowardCell(finalDestIce);
+		useChipOnCell(CHIP_STALACTITE, finalTargetIce);
+		moveToward(enemyIce);
+	}
+	if (glacon() === true){
+		moveTowardCell(finalDestIce);
+		useChipOnCell(CHIP_ICE, finalTargetIce);
+		useChipOnCell(CHIP_ICE, finalTargetIce);
+		moveToward(enemyIce);
+	}
+	while(getMP() > 0 and getCellDistance(getCell(), getCell(enemyIce)) > 4){
+		if(getCooldown(CHIP_REFLEXES) == 0){
+			useChip(CHIP_REFLEXES, getNearestAlly());
+		}
+		if(moveToward(enemyIce, 1) === 0){
+			break;
+		}
+	}
+	
+}
+
+function iceberg(){
+	if(getCooldown(CHIP_ICEBERG) == 0 && getTP() >= 7){
+		var areaTarget = cellsAcc(getCell(enemyIce), 2);
+		var cellTarget;
+		var mpUsed;
+		for (var cc in areaTarget){
+			cellTarget = getCellToUseChipOnCell(CHIP_ICEBERG, cc);
+			mpUsed = getPathLength(getCell(), cellTarget);
+			if(mpUsed <= getMP()){
+				finalDestIce = cellTarget;
+				finalTargetIce = cc;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+function stalactite(){
+	if(getCooldown(CHIP_STALACTITE) == 0 && getTP() >= 6){
+		var cellTarget;
+		var mpUsed;
+		cellTarget = getCellToUseChipOnCell(CHIP_STALACTITE, getCell(enemyIce));
+		mpUsed = getPathLength(getCell(), cellTarget);
+		if(mpUsed <= getMP()){
+			finalDestIce = cellTarget;
+			finalTargetIce = getCell(enemyIce);
+			return true;
+		}
+	}
+	return false;
+}
+
+function glacon(){
+	if(getCooldown(CHIP_ICE) == 0 && getTP() >= 4){
+		var cellTarget;
+		var mpUsed;
+		cellTarget = getCellToUseChipOnCell(CHIP_ICE, getCell(enemyIce));
+		mpUsed = getPathLength(getCell(), cellTarget);
+		if(mpUsed <= getMP()){
+			finalDestIce = cellTarget;
+			finalTargetIce = getCell(enemyIce);
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+
+
